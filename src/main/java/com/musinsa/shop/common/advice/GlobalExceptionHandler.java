@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidRequestException.class)
     public ResultResponse<Object> handleInvalidRequestException(InvalidRequestException e) {
         log.error("handleInvalidRequestException: {}", e.getMessage(), e);
-        return ResultResponse.of(ExceptionCode.INVALID_REQUEST);
+        return ResultResponse.of(ExceptionCode.INVALID_REQUEST, e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -72,13 +72,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResultResponse<Object> handleNotFoundException(ResourceNotFoundException e) {
         log.error("handleBadRequestException: {}", e.getMessage(), e);
-        return ResultResponse.of(ExceptionCode.RESOURCE_NOT_FOUND);
+        return ResultResponse.of(ExceptionCode.RESOURCE_NOT_FOUND, e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.CONFLICT)
     @ExceptionHandler(DuplicateResourceException .class)
     public ResultResponse<Object> handleDuplicateException(DuplicateResourceException e) {
         log.error("handleDuplicateException: {}", e.getMessage(), e);
-        return ResultResponse.of(ExceptionCode.DUPLICATE_RESOURCE);
+        return ResultResponse.of(ExceptionCode.DUPLICATE_RESOURCE, e.getMessage());
     }
 }
