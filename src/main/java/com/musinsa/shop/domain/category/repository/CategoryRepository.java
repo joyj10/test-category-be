@@ -19,4 +19,5 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
             "AND c.deleted = false")
     void bulkUpdatePath(@Param("oldPath") String oldPath, @Param("newPath") String newPath, @Param("selfId") Long selfId);
 
+    boolean existsByParentIdAndDeletedFalse(Long parentId);
 }

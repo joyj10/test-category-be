@@ -33,4 +33,11 @@ public class CategoryController {
         CategoryResponse result = categoryService.updateCategory(id, categoryRequest);
         return ResultResponse.success(result);
     }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "카테고리 삭제")
+    public ResultResponse<Void> deleteCategory(@PathVariable Long id) {
+        categoryService.deleteCategory(id);
+        return ResultResponse.success(null);
+    }
 }

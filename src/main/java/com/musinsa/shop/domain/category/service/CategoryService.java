@@ -146,4 +146,21 @@ public class CategoryService {
 
         categoryRepository.bulkUpdatePath(oldPath, newPath, category.getId());
     }
+
+    /**
+     * 카테고리 삭제
+     * - 하위 카테고리가 없는 경우 삭제 가능
+     * - soft delete
+     */
+    @Transactional
+    public void deleteCategory(Long id) {
+        Category category = getCategory(id);
+
+        boolean hasChildren = categoryRepository.existsByParentIdAndDeletedFalse(id);
+        if (hasChildren) {
+            throw new InvalidRequestException("하위 카테고리가 존재하여 삭제할 수 없습니다.");
+        }
+
+        category.softDelete();
+    }
 }

@@ -140,4 +140,14 @@ public class Category {
         this.depth = (parent != null) ? parent.getDepth() + 1 : 0;
     }
 
+    // ===== 삭제 처리 메서드 ===== //
+    public void softDelete() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+
+        // 연관관계 정리
+        if (this.parent != null) {
+            this.parent.removeChildCategory(this);
+        }
+    }
 }
