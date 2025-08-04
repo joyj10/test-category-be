@@ -22,7 +22,6 @@ public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
     @Column(name = "title", nullable = false, length = 50)
@@ -85,8 +84,15 @@ public class Category {
         category.link = link;
         category.active = (active != null) ? active : true;
         category.parent = parent;
-        category.depth = (parent != null) ? parent.getDepth() + 1 : 0;
         category.deleted = false;
+
+        // 연관 관계 설정
+        if (parent != null) {
+            parent.addChildCategory(category);
+            category.depth = parent.getDepth() + 1;
+        } else {
+            category.depth = 0;
+        }
 
         return category;
     }
@@ -97,15 +103,41 @@ public class Category {
         }
     }
 
-    /**
-     * entity ID 할당된 이후 path 설정
-     * : 반드시 save() 이후 호출
-     */
-    public void updatePath() {
-        if (this.parent != null) {
-            this.path = parent.getPath() + this.id + "/";
-        } else {
-            this.path = "/" + this.id + "/";
-        }
+    // ===== 필드 수정 메서드 (부모 제외) ===== //
+    public void update(String title, Integer displayOrder, String link, Boolean active) {
+        if (title != null) this.title = title;
+        if (displayOrder != null) this.displayOrder = displayOrder;
+        if (link != null) this.link = link;
+        if (active != null) this.active = active;
     }
+
+    // ===== 부모 변경 메서드 ===== //
+    public void changeParent(Category newParent) {
+        // 기존 부모를 children 제거
+        if (this.parent != null) {
+            this.parent.removeChildCategory(this);
+        }
+
+        // 새로운 부모 설정
+        this.parent = newParent;
+        if (newParent != null) {
+            newParent.addChildCategory(this);
+        }
+
+        // path & depth 갱신
+        updatePath();
+        updateDepth();
+    }
+
+    // ===== path/depth 갱신 ===== //
+    public void updatePath() {
+        this.path = (parent != null)
+                ? parent.getPath() + this.id + "/"
+                : "/" + this.id + "/";
+    }
+
+    public void updateDepth() {
+        this.depth = (parent != null) ? parent.getDepth() + 1 : 0;
+    }
+
 }
