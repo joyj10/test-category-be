@@ -17,7 +17,12 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "category")
+@Table(
+        name = "category",
+        indexes = {
+                @Index(name = "idx_category_tree_query", columnList = "path, deleted, active")
+        }
+)
 public class Category {
 
     @Id
@@ -28,7 +33,7 @@ public class Category {
     private String title;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
+    @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Category parent;
 
     @OneToMany(mappedBy = "parent")

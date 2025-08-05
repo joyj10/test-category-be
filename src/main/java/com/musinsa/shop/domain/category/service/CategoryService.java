@@ -3,9 +3,7 @@ package com.musinsa.shop.domain.category.service;
 import com.musinsa.shop.common.exception.DuplicateResourceException;
 import com.musinsa.shop.common.exception.InvalidRequestException;
 import com.musinsa.shop.common.exception.ResourceNotFoundException;
-import com.musinsa.shop.domain.category.dto.CategoryRequest;
-import com.musinsa.shop.domain.category.dto.CategoryResponse;
-import com.musinsa.shop.domain.category.dto.CategoryUpdateRequest;
+import com.musinsa.shop.domain.category.dto.*;
 import com.musinsa.shop.domain.category.entity.Category;
 import com.musinsa.shop.domain.category.repository.CategoryRepository;
 import jakarta.validation.Valid;
@@ -13,8 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -89,9 +86,9 @@ public class CategoryService {
         // 카테고리 필드 업데이트
         category.update(
                 updateRequest.getTitle(),
-                resolveDisplayOrder(updateRequest.getDisplayOrder()),
+                updateRequest.getDisplayOrder(),
                 updateRequest.getLink(),
-                resolveActive(updateRequest.getActive())
+                updateRequest.getActive()
         );
 
         // 부모가 변경된 경우에만 path 갱신 및 하위 카테고리 path 일괄 변경
@@ -162,5 +159,66 @@ public class CategoryService {
         }
 
         category.softDelete();
+    }
+
+    /**
+     * 카테고리 전체 조회(트리 구조)
+     * - parentId null : 전체 조회
+     * - parentId O : 해당 카테고리 부터 하위 조회
+     */
+    @Transactional(readOnly = true)
+    public List<CategoryTreeResponse> getCategories(Long parentId) {
+        List<CategoryDto> categories;
+
+        if (parentId == null) {
+            categories = categoryRepository.findAllTree();
+        } else {
+            String path = getCategory(parentId).getPath();
+            categories = categoryRepository.findTreeByPath(path);
+        }
+
+        List<CategoryTreeResponse> tree = buildCategoryTree(categories);
+        sortTree(tree);
+        return tree;
+    }
+
+    // 카테고리 트리구조 변환
+    private List<CategoryTreeResponse> buildCategoryTree(List<CategoryDto> categories) {
+        Map<Long, CategoryTreeResponse> map = new HashMap<>();
+        List<CategoryTreeResponse> tree = new ArrayList<>();
+
+        for (CategoryDto category : categories) {
+            Long categoryId = category.getId();
+            Long parentId = category.getParentId();
+            CategoryTreeResponse node = CategoryTreeResponse.of(category);
+            map.put(categoryId, node);
+
+            if (parentId == null || !map.containsKey(parentId)) {
+                tree.add(node);
+            } else {
+                CategoryTreeResponse parent = map.get(parentId);
+                if (parent != null) {
+                    parent.getChildren().add(node);
+                }
+            }
+
+        }
+        return tree;
+    }
+
+    // 카테고리 정렬
+    private void sortTree(List<CategoryTreeResponse> tree) {
+        tree.sort(Comparator.comparingInt(CategoryTreeResponse::getDisplayOrder));
+        for (CategoryTreeResponse node : tree) {
+            sortChildrenByDisplayOrder(node);
+        }
+    }
+
+    // 하위 함수 정렬
+    private void sortChildrenByDisplayOrder(CategoryTreeResponse node) {
+        node.getChildren().sort(Comparator.comparingInt(CategoryTreeResponse::getDisplayOrder));
+        for (CategoryTreeResponse child : node.getChildren()) {
+            sortChildrenByDisplayOrder(child);
+        }
     }
 }
