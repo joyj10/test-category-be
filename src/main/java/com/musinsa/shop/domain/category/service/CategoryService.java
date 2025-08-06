@@ -36,18 +36,26 @@ public class CategoryService {
                 parent
         );
 
-        // 카테고리 저장 후 path, depth 세팅
+        // 카테고리 저장 후 path 세팅
         category = categoryRepository.save(category);
         category.updatePath();
 
         return CategoryResponse.of(category);
     }
 
-    // 유효성 체크: 이름 중복 (동일 상위 카테고리 내 이름 동일 시 중복)
+    // 이름 중복 유효성 체크: 등록 (동일 상위 카테고리 내 이름 동일 시 중복)
     private void validateDuplicateTitle(Long parentId, String title) {
         boolean exists = categoryRepository.existsByParentIdAndTitle(parentId, title);
         if (exists) {
             throw new DuplicateResourceException("이미 존재하는 카테고리명입니다.");
+        }
+    }
+
+    // 이름 중복 유효성 체크: 수정 (동일 상위 카테고리 내 본인 제외 이름 동일 시 중복)
+    private void validateDuplicateTitle(Long parentId, String title, Long selfId) {
+        boolean exists = categoryRepository.existsByParentIdAndTitleAndIdNot(parentId, title, selfId);
+        if (exists) {
+            throw new DuplicateResourceException("동일 상위 카테고리 내 이미 존재하는 카테고리명입니다.");
         }
     }
 
@@ -80,20 +88,29 @@ public class CategoryService {
     public CategoryResponse updateCategory(Long categoryId, @Valid CategoryUpdateRequest updateRequest) {
         Category category = getCategory(categoryId);
         String oldPath = category.getPath();
+        Long oldParentId = category.getParent() != null ? category.getParent().getId() : null;
+        Long parentId = updateRequest.getParentId();
 
-        Category newParent = getValidatedParent(updateRequest.getParentId(), categoryId);
+        boolean parentChanged = isParentChanged(oldParentId, parentId);
 
-        // 카테고리 필드 업데이트
-        category.update(
-                updateRequest.getTitle(),
-                updateRequest.getDisplayOrder(),
-                updateRequest.getLink(),
-                updateRequest.getActive()
-        );
+        Category newParent = null;
+        if (parentChanged) {
+            newParent = getValidatedParent(parentId, categoryId);
+        }
 
-        // 부모가 변경된 경우에만 path 갱신 및 하위 카테고리 path 일괄 변경
-        if (isParentChanged(category, newParent)) {
-            updateParentAndPath(category, newParent, oldPath);
+        // title 중복 검사 (부모 카테고리 기준) : 부모 카테고리 변경 or 타이틀 변경 시
+        if (parentChanged || !category.getTitle().equals(updateRequest.getTitle())) {
+            Long validateParentId = parentChanged ? parentId : oldParentId;
+            validateDuplicateTitle(validateParentId, updateRequest.getTitle(), categoryId);
+        }
+
+
+        // 카테고리 데이터 변경
+        category.updateFieldAndParent(updateRequest, newParent, parentChanged);
+
+        // 부모 카테고리 변경 시 하위 카테고리 path 일괄 변경
+        if (parentChanged) {
+            updateBulkSubPath(categoryId,oldPath, category.getPath());
         }
 
         return CategoryResponse.of(category);
@@ -130,18 +147,13 @@ public class CategoryService {
     }
 
     // 부모 카테고리 변경 여부
-    private boolean isParentChanged(Category category, Category newParent) {
-        Long oldParentId = category.getParent() != null ? category.getParent().getId() : null;
-        Long newParentId = newParent != null ? newParent.getId() : null;
+    private boolean isParentChanged(Long oldParentId, Long newParentId) {
         return !Objects.equals(oldParentId, newParentId);
     }
 
-    // 부모 카테고리 변경 및 path 갱신 처리 : 하위 카테고리 path는 bulk update로 일괄 갱신
-    private void updateParentAndPath(Category category, Category newParent, String oldPath) {
-        category.changeParent(newParent);
-        String newPath = category.getPath();
-
-        categoryRepository.bulkUpdatePath(oldPath, newPath, category.getId());
+    // 하위 카테고리 path bulk update로 일괄 갱신
+    private void updateBulkSubPath(Long categoryId, String oldPath, String newPath) {
+        categoryRepository.bulkUpdatePath(categoryId, oldPath, newPath);
     }
 
     /**

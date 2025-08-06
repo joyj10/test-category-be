@@ -46,7 +46,6 @@
 | title         | VARCHAR(50)  | 카테고리 이름                               | NOT NULL           |
 | parent_id     | BIGINT       | 상위 카테고리 ID (루트: NULL)                 | 자기참조 필드, nullable  |
 | path          | VARCHAR(512) | 전체 경로 (카테고리 ID 나열, 구분자 사용)	           | nullable           |
-| depth         | INT          | 트리 구조 깊이 (루트: 0)                      | nullable           |
 | display_order | INT          | 정렬 순서 (동일 parent 내)                   | default 9999       |
 | link          | VARCHAR(512) | 클릭 이동 URL                             | nullable           |
 | active        | BOOLEAN      | 카테고리 표시 여부 (true: 노출, false: 숨김)      | default true       |

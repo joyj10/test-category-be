@@ -41,7 +41,6 @@ public class CategoryRepositoryImpl implements CategoryRepositoryCustom {
                         category.title,
                         category.parent.id.as("parentId"),
                         category.path,
-                        category.depth,
                         category.link,
                         category.displayOrder,
                         category.active,

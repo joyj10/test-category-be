@@ -14,7 +14,6 @@ public class CategoryDto {
     private String title;
     private Long parentId;
     private String path;
-    private int depth;
     private String link;
     private int displayOrder;
     private boolean active;

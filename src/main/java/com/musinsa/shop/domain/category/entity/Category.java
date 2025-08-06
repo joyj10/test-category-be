@@ -1,6 +1,7 @@
 package com.musinsa.shop.domain.category.entity;
 
 import com.musinsa.shop.common.exception.InvalidRequestException;
+import com.musinsa.shop.domain.category.dto.CategoryUpdateRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -41,9 +42,6 @@ public class Category {
 
     @Column(name = "path", length = 512)
     private String path;
-
-    @Column(name = "depth")
-    private Integer depth;
 
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
@@ -94,9 +92,6 @@ public class Category {
         // 연관 관계 설정
         if (parent != null) {
             parent.addChildCategory(category);
-            category.depth = parent.getDepth() + 1;
-        } else {
-            category.depth = 0;
         }
 
         return category;
@@ -108,8 +103,18 @@ public class Category {
         }
     }
 
-    // ===== 필드 수정 메서드 (부모 제외) ===== //
-    public void update(String title, Integer displayOrder, String link, Boolean active) {
+    // ===== 필드 수정 메서드 ===== //
+    // 카테고리의 필드 + 부모 변경을 함께 처리하는 통합 메서드
+    public void updateFieldAndParent(CategoryUpdateRequest updateRequest, Category newParent, boolean parentChanged) {
+        update(updateRequest.getTitle(), updateRequest.getDisplayOrder(), updateRequest.getLink(), updateRequest.getActive());
+
+        // 부모 카테고리 변경된 경우 변경 처리
+        if (parentChanged) {
+            changeParent(newParent);
+        }
+    }
+
+    private void update(String title, Integer displayOrder, String link, Boolean active) {
         if (title != null) this.title = title;
         if (displayOrder != null) this.displayOrder = displayOrder;
         if (link != null) this.link = link;
@@ -117,7 +122,7 @@ public class Category {
     }
 
     // ===== 부모 변경 메서드 ===== //
-    public void changeParent(Category newParent) {
+    private void changeParent(Category newParent) {
         // 기존 부모를 children 제거
         if (this.parent != null) {
             this.parent.removeChildCategory(this);
@@ -129,20 +134,14 @@ public class Category {
             newParent.addChildCategory(this);
         }
 
-        // path & depth 갱신
         updatePath();
-        updateDepth();
     }
 
-    // ===== path/depth 갱신 ===== //
+    // ===== path 변경 메서드  ===== //
     public void updatePath() {
         this.path = (parent != null)
                 ? parent.getPath() + this.id + "/"
                 : "/" + this.id + "/";
-    }
-
-    public void updateDepth() {
-        this.depth = (parent != null) ? parent.getDepth() + 1 : 0;
     }
 
     // ===== 삭제 처리 메서드 ===== //

@@ -11,13 +11,15 @@ import org.springframework.stereotype.Repository;
 public interface CategoryRepository extends JpaRepository<Category, Long>, CategoryRepositoryCustom {
     boolean existsByParentIdAndTitle(Long parentId, String title);
 
+    boolean existsByParentIdAndTitleAndIdNot(Long parentId, String title, Long id);
+
     @Modifying
     @Query("UPDATE Category c " +
             "SET c.path = CONCAT(:newPath, SUBSTRING(c.path, LENGTH(:oldPath) + 1)) " +
             "WHERE c.path LIKE CONCAT(:oldPath, '%') " +
             "AND c.id <> :selfId " +
             "AND c.deleted = false")
-    void bulkUpdatePath(@Param("oldPath") String oldPath, @Param("newPath") String newPath, @Param("selfId") Long selfId);
+    void bulkUpdatePath(@Param("selfId") Long selfId, @Param("oldPath") String oldPath, @Param("newPath") String newPath);
 
     boolean existsByParentIdAndDeletedFalse(Long parentId);
 }

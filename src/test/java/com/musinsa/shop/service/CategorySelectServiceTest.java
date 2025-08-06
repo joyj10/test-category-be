@@ -39,9 +39,9 @@ public class CategorySelectServiceTest {
         void test_success_get_tree_all() {
             // given
             List<CategoryDto> flatList = List.of(
-                    new CategoryDto(1L, "패션", null, "/1/", 0, "/category/fashion", 1, true, null, null, null),
-                    new CategoryDto(2L, "남성의류", 1L, "/1/2/", 1, "/category/men", 1, true, null, null, null),
-                    new CategoryDto(3L, "셔츠", 2L, "/1/2/3/", 2, "/category/shirt", 1, true, null, null, null)
+                    new CategoryDto(1L, "패션", null, "/1/", "/category/fashion", 1, true, null, null, null),
+                    new CategoryDto(2L, "남성의류", 1L, "/1/2/", "/category/men", 1, true, null, null, null),
+                    new CategoryDto(3L, "셔츠", 2L, "/1/2/3/", "/category/shirt", 1, true, null, null, null)
             );
 
             when(categoryRepository.findAllTree()).thenReturn(flatList);
@@ -73,9 +73,9 @@ public class CategorySelectServiceTest {
             parent.updatePath();
 
             List<CategoryDto> flatList = List.of(
-                    new CategoryDto(1L, "상의", null, "/1/", 0, "/category/top", 1, true, null, null, null), // ✅ 루트 추가
-                    new CategoryDto(2L, "셔츠", 1L, "/1/2/", 1, "/category/shirt", 1, true, null, null, null),
-                    new CategoryDto(3L, "맨투맨", 1L, "/1/3/", 1, "/category/hoodie", 2, true, null, null, null)
+                    new CategoryDto(1L, "상의", null, "/1/", "/category/top", 1, true, null, null, null), // ✅ 루트 추가
+                    new CategoryDto(2L, "셔츠", 1L, "/1/2/", "/category/shirt", 1, true, null, null, null),
+                    new CategoryDto(3L, "맨투맨", 1L, "/1/3/", "/category/hoodie", 2, true, null, null, null)
             );
 
             when(categoryRepository.findById(parentId)).thenReturn(Optional.of(parent));

@@ -1,5 +1,6 @@
 package com.musinsa.shop.service;
 
+import com.musinsa.shop.common.exception.DuplicateResourceException;
 import com.musinsa.shop.common.exception.InvalidRequestException;
 import com.musinsa.shop.common.exception.ResourceNotFoundException;
 import com.musinsa.shop.domain.category.dto.CategoryResponse;
@@ -80,7 +81,7 @@ class CategoryUpdateServiceTest {
             oldParent.updatePath();
 
             // 새 부모 카테고리
-            Category newParent = Category.create("신상", 0, "/category/new", true, null);
+            Category newParent = Category.create("신상", 1, "/category/new", true, null);
             ReflectionTestUtils.setField(newParent, "id", newParentId);
             newParent.updatePath();
 
@@ -89,7 +90,7 @@ class CategoryUpdateServiceTest {
             ReflectionTestUtils.setField(originCategory, "id", categoryId);
             originCategory.updatePath();
 
-            CategoryUpdateRequest updateRequest = new CategoryUpdateRequest("반팔티-NEW", newParentId, 5,  "/category/tshirt-new", true);
+            CategoryUpdateRequest updateRequest = new CategoryUpdateRequest("반팔티-NEW", newParentId, 5, "/category/tshirt-new", true);
 
             when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(originCategory));
             when(categoryRepository.findById(newParentId)).thenReturn(Optional.of(newParent));
@@ -106,7 +107,7 @@ class CategoryUpdateServiceTest {
             assertEquals(newParent, originCategory.getParent());
             assertEquals("/3/2/", originCategory.getPath());
 
-            verify(categoryRepository).bulkUpdatePath("/1/2/", "/3/2/", categoryId);
+            verify(categoryRepository).bulkUpdatePath(categoryId, "/1/2/", "/3/2/");
         }
     }
 
@@ -151,7 +152,7 @@ class CategoryUpdateServiceTest {
 
             assertEquals("부모 카테고리가 존재하지 않습니다.", exception.getMessage());
 
-            // side effect 없는지 확인 (선택)
+            // 벌크 쿼리 실행 안됨 체크
             verify(categoryRepository, never()).bulkUpdatePath(any(), any(), any());
         }
 
@@ -176,7 +177,7 @@ class CategoryUpdateServiceTest {
 
             assertEquals("자기 자신을 부모로 지정할 수 없습니다.", exception.getMessage());
 
-            // bulk update 호출 안 됐는지 확인 (선택)
+            // 벌크 쿼리 실행 안됨 체크
             verify(categoryRepository, never()).bulkUpdatePath(any(), any(), any());
         }
 
@@ -210,8 +211,39 @@ class CategoryUpdateServiceTest {
 
             assertEquals("하위 카테고리를 부모로 지정할 수 없습니다.", exception.getMessage());
 
-            // bulk update 같은 side-effect가 발생하지 않았는지 검증 (선택)
+            // 벌크 쿼리 실행 안됨 체크
             verify(categoryRepository, never()).bulkUpdatePath(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("변경 부모 카테고리에 동일한 이름이 있는 경우 예외 발생")
+        void test_update_fail_when_title_duplicate_in_new_parent() {
+            // given
+            Long categoryId = 2L;
+            Long newParentId = 3L;
+            String duplicatedTitle = "반팔티";
+
+            Category originCategory = Category.create(duplicatedTitle, 1, "/category/tshirt", true, null);
+            ReflectionTestUtils.setField(originCategory, "id", categoryId);
+            originCategory.updatePath();
+
+            Category newParent = Category.create("신상", 0, "/category/new", true, null);
+            ReflectionTestUtils.setField(newParent, "id", newParentId);
+            newParent.updatePath();
+
+            // 수정 요청: 부모를 바꾸면서 동일한 title 유지
+            CategoryUpdateRequest updateRequest = new CategoryUpdateRequest(duplicatedTitle, newParentId, 5, "/category/tshirt-new", true);
+
+            when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(originCategory));
+            when(categoryRepository.findById(newParentId)).thenReturn(Optional.of(newParent));
+            // 중복 title 존재함
+            when(categoryRepository.existsByParentIdAndTitleAndIdNot(newParentId, duplicatedTitle, categoryId)).thenReturn(true);
+
+            // when & then
+            DuplicateResourceException exception = assertThrows(DuplicateResourceException.class, () ->
+                    categoryService.updateCategory(categoryId, updateRequest));
+
+                    assertEquals("동일 상위 카테고리 내 이미 존재하는 카테고리명입니다.", exception.getMessage());
         }
     }
 }
