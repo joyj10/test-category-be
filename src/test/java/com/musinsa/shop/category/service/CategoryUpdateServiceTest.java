@@ -1,4 +1,4 @@
-package com.musinsa.shop.service;
+package com.musinsa.shop.category.service;
 
 import com.musinsa.shop.common.exception.DuplicateResourceException;
 import com.musinsa.shop.common.exception.InvalidRequestException;
@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("카테고리 수정 기능")
+@DisplayName("단위 테스트: 카테고리 수정")
 class CategoryUpdateServiceTest {
 
     @InjectMocks

@@ -104,13 +104,12 @@ public class CategoryService {
             validateDuplicateTitle(validateParentId, updateRequest.getTitle(), categoryId);
         }
 
-
         // 카테고리 데이터 변경
         category.updateFieldAndParent(updateRequest, newParent, parentChanged);
 
         // 부모 카테고리 변경 시 하위 카테고리 path 일괄 변경
         if (parentChanged) {
-            updateBulkSubPath(categoryId,oldPath, category.getPath());
+            updateBulkSubPath(categoryId, oldPath, category.getPath());
         }
 
         return CategoryResponse.of(category);

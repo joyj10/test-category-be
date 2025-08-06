@@ -13,7 +13,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long>, Categ
 
     boolean existsByParentIdAndTitleAndIdNot(Long parentId, String title, Long id);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE Category c " +
             "SET c.path = CONCAT(:newPath, SUBSTRING(c.path, LENGTH(:oldPath) + 1)) " +
             "WHERE c.path LIKE CONCAT(:oldPath, '%') " +

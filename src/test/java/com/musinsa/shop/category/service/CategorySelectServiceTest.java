@@ -1,4 +1,4 @@
-package com.musinsa.shop.service;
+package com.musinsa.shop.category.service;
 
 import com.musinsa.shop.common.exception.ResourceNotFoundException;
 import com.musinsa.shop.domain.category.dto.CategoryDto;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-@DisplayName("카테고리 조회 기능")
+@DisplayName("단위 테스트: 카테고리 조회")
 public class CategorySelectServiceTest {
 
     @InjectMocks
